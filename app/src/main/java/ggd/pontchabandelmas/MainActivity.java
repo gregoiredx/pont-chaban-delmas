@@ -4,82 +4,96 @@ import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.ArrayAdapter;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.Volley;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "ggd.chaban.main";
-    private ListView listView;
+    private static final String TAG = "ggd.pontchaban.main";
+    private static final SimpleDateFormat CLOSING_DATE_FORMAT = new SimpleDateFormat("EEEE d MMMM yyyy 'de' HH:mm", Locale.FRANCE);
+    private static final SimpleDateFormat REOPENING_DATE_FORMAT = new SimpleDateFormat(" 'à' HH:mm", Locale.FRANCE);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        listView = (ListView) findViewById(R.id.listView);
+        ListView listView = (ListView) findViewById(R.id.listView);
         RequestQueue queue = Volley.newRequestQueue(this);
         PassagesRequest passagesRequest = new PassagesRequest(
-                new Response.Listener<List<Passage>>() {
-                    @Override
-                    public void onResponse(List<Passage> passages) {
-                        ArrayAdapter<Passage> adapter = new ArrayAdapter<>(
-                                MainActivity.this,
-                                android.R.layout.simple_list_item_1, passages
-                        );
-                        listView.setAdapter(adapter);
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e(TAG, "Error getting passages", error);
-                        new AlertDialog.Builder(MainActivity.this)
-                                .setMessage(error.getMessage())
-                                .create().show();
-                    }
-                });
+                new ResponseListener(listView),
+                new ErrorListener());
         queue.add(passagesRequest);
     }
 
-    private static class PassagesRequest extends Request<List<Passage>> {
+    private class PassagesAdapter extends BaseAdapter {
 
-        private static final String URL = "https://data.bordeaux-metropole.fr/files.php?gid=489&format=6";
-        private final Response.Listener<List<Passage>> listener;
+        private final List<Passage> passages;
 
-        private PassagesRequest(Response.Listener<List<Passage>> listener, Response.ErrorListener errorListener) {
-            super(Method.GET, URL, errorListener);
-            this.listener = listener;
+        private PassagesAdapter(List<Passage> passages){
+            this.passages = passages;
         }
 
         @Override
-        protected Response<List<Passage>> parseNetworkResponse(NetworkResponse response) {
-            try {
-                return Response.success(new PrevisionsParser().parse(
-                        new ByteArrayInputStream(response.data)),
-                        HttpHeaderParser.parseCacheHeaders(response)
-                );
-            } catch (IOException e) {
-                deliverError(new VolleyError("Could not read previsions", e));
+        public int getCount() {
+            return passages.size();
+        }
+
+        @Override
+        public Passage getItem(int i) {
+            return passages.get(i);
+        }
+
+        @Override
+        public long getItemId(int i) {
+            return passages.get(i).hashCode();
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup container) {
+            if (convertView == null) {
+                convertView =  getLayoutInflater().inflate(R.layout.item, container, false);
             }
-            return null;
+            ((TextView) convertView.findViewById(R.id.closing)).setText(CLOSING_DATE_FORMAT.format(getItem(position).closing));
+            ((TextView) convertView.findViewById(R.id.reopening)).setText(REOPENING_DATE_FORMAT.format(getItem(position).reopening));
+            ((TextView) convertView.findViewById(R.id.boat)).setText(getItem(position).boat);
+            ((TextView) convertView.findViewById(R.id.type)).setText(getItem(position).type);
+            return convertView;
+        }
+    }
+
+    private  class ResponseListener implements Response.Listener<List<Passage>> {
+
+        private ListView listView;
+
+        ResponseListener(ListView listView){
+            this.listView = listView;
         }
 
         @Override
-        protected void deliverResponse(List<Passage> response) {
-            listener.onResponse(response);
+        public void onResponse(List<Passage> passages) {
+            listView.setAdapter(new PassagesAdapter(passages));
         }
+    }
 
+    private class ErrorListener implements Response.ErrorListener {
+        @Override
+        public void onErrorResponse(VolleyError error) {
+            Log.e(TAG, "Error getting passages", error);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(error.getMessage())
+                    .create().show();
+        }
     }
 }
