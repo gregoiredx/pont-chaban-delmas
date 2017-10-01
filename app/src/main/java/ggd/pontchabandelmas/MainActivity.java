@@ -1,5 +1,8 @@
 package ggd.pontchabandelmas;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -15,26 +18,67 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final String LOCAL_FILE = "previsions.csv";
     private static final String TAG = "ggd.pontchaban.main";
     private static final SimpleDateFormat CLOSING_DATE_FORMAT = new SimpleDateFormat("EEEE d MMMM yyyy 'de' HH:mm", Locale.FRANCE);
     private static final SimpleDateFormat REOPENING_DATE_FORMAT = new SimpleDateFormat(" 'à' HH:mm", Locale.FRANCE);
+
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ListView listView = (ListView) findViewById(R.id.listView);
+        listView = (ListView) findViewById(R.id.listView);
+        Date startDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
+        if(isConnected()){
+            initFromServer(startDate);
+        }else {
+            initFromLocalFile(startDate);
+        }
+    }
+
+    private void initFromLocalFile(Date startDate) {
+        try {
+            FileInputStream fileInputStream = openFileInput(LOCAL_FILE);
+            showPassages(new PrevisionsParser().parse(startDate, fileInputStream));
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "No connectivity and no local file", e);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setMessage("Pas de réseau et pas de sauvegarde locale")
+                    .create().show();
+        }catch (IOException | ParseException e) {
+            Log.e(TAG, "Error getting passages from local file", e);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(e.getMessage())
+                    .create().show();
+        }
+    }
+
+    private void initFromServer(Date startDate) {
         RequestQueue queue = Volley.newRequestQueue(this);
         PassagesRequest passagesRequest = new PassagesRequest(
-                new ResponseListener(listView),
+                this,
+                startDate, new ResponseListener(listView),
                 new ErrorListener());
         queue.add(passagesRequest);
+    }
+
+    private boolean isConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        return ni != null && ni.isConnected();
     }
 
     private class PassagesAdapter extends BaseAdapter {
@@ -75,22 +119,24 @@ public class MainActivity extends AppCompatActivity {
 
     private  class ResponseListener implements Response.Listener<List<Passage>> {
 
-        private ListView listView;
-
         ResponseListener(ListView listView){
-            this.listView = listView;
+            MainActivity.this.listView = listView;
         }
 
         @Override
         public void onResponse(List<Passage> passages) {
-            listView.setAdapter(new PassagesAdapter(passages));
+            showPassages(passages);
         }
+    }
+
+    private void showPassages(List<Passage> passages) {
+        listView.setAdapter(new PassagesAdapter(passages));
     }
 
     private class ErrorListener implements Response.ErrorListener {
         @Override
         public void onErrorResponse(VolleyError error) {
-            Log.e(TAG, "Error getting passages", error);
+            Log.e(TAG, "Error getting passages from server", error);
             new AlertDialog.Builder(MainActivity.this)
                     .setMessage(error.getMessage())
                     .create().show();
