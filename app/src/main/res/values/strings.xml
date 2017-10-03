@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Pont Chaban-Delmas</string>
+    <string name="date">Le %1$s</string>
+    <string name="time">de %1$s à %2$s</string>
 </resources>

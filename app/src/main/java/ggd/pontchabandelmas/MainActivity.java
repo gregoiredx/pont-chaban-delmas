@@ -31,8 +31,9 @@ public class MainActivity extends AppCompatActivity {
 
     public static final String LOCAL_FILE = "previsions.csv";
     private static final String TAG = "ggd.pontchaban.main";
-    private static final SimpleDateFormat CLOSING_DATE_FORMAT = new SimpleDateFormat("EEEE d MMMM yyyy 'de' HH:mm", Locale.FRANCE);
-    private static final SimpleDateFormat REOPENING_DATE_FORMAT = new SimpleDateFormat(" 'à' HH:mm", Locale.FRANCE);
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEEE d MMMM yyyy", Locale.FRANCE);
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm", Locale.FRANCE);
 
     private ListView listView;
 
@@ -109,10 +110,23 @@ public class MainActivity extends AppCompatActivity {
             if (convertView == null) {
                 convertView =  getLayoutInflater().inflate(R.layout.item, container, false);
             }
-            ((TextView) convertView.findViewById(R.id.closing)).setText(CLOSING_DATE_FORMAT.format(getItem(position).closing));
-            ((TextView) convertView.findViewById(R.id.reopening)).setText(REOPENING_DATE_FORMAT.format(getItem(position).reopening));
-            ((TextView) convertView.findViewById(R.id.boat)).setText(getItem(position).boat);
-            ((TextView) convertView.findViewById(R.id.type)).setText(getItem(position).type);
+            Passage item = getItem(position);
+            ((TextView) convertView.findViewById(R.id.date)).setText(
+                    getString(R.string.date, DATE_FORMAT.format(item.closing))
+            );
+            ((TextView) convertView.findViewById(R.id.hours)).setText(
+                    getString(R.string.time, TIME_FORMAT.format(item.closing), TIME_FORMAT.format(item.reopening)
+            ));
+            ((TextView) convertView.findViewById(R.id.boat)).setText(item.boat);
+            String type = item.type;
+            TextView typeView = convertView.findViewById(R.id.type);
+            if(type.equals("Totale")) {
+                typeView.setText("");
+                typeView.setVisibility(View.GONE);
+            }else {
+                typeView.setText(type);
+                typeView.setVisibility(View.VISIBLE);
+            }
             return convertView;
         }
     }

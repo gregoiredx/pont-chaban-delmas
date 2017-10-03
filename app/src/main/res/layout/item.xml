@@ -3,31 +3,26 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/date"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:text="Le jeudi 1 octobre"
+        android:textSize="20sp" />
 
-        <TextView
-            android:id="@+id/closing"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Le jeudi 1 octobre de 13:19" />
-
-        <TextView
-            android:id="@+id/reopening"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" à 14:57" />
-
-    </LinearLayout>
+    <TextView
+        android:id="@+id/hours"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="de 13:19 à 14:57"
+        android:textSize="18sp" />
 
     <TextView
         android:id="@+id/boat"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:text="BELEM" />
+        android:text="BELEM"
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/type"
