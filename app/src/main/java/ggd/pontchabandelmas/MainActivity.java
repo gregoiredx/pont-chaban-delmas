@@ -1,12 +1,17 @@
 package ggd.pontchabandelmas;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -43,10 +48,41 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         listView = (ListView) findViewById(R.id.listView);
         Date startDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
-        if(isConnected()){
+        if (isConnected()) {
             initFromServer(startDate);
-        }else {
+        } else {
             initFromLocalFile(startDate);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        boolean notificationsActive = sharedPref.getBoolean("notifications_active_pref", false);
+        MenuItem item = menu.findItem(R.id.notifications_toggle);
+        item.setIcon(notificationsActive ? R.drawable.ic_notifications_on : R.drawable.ic_notifications_off);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.notifications_toggle:
+                SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+                boolean notificationsActive = sharedPref.getBoolean("notifications_active_pref", false);
+                boolean newNotificationsActivationState = !notificationsActive;
+                Intent startNotificationSchedulerIntent = new Intent(this, NotificationsSchedulerService.class);
+                startNotificationSchedulerIntent.putExtra(NotificationsSchedulerService.ACTIVATE_NOTIFICATIONS_EXTRA, newNotificationsActivationState);
+                startService(startNotificationSchedulerIntent);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putBoolean("notifications_active_pref", newNotificationsActivationState);
+                editor.apply();
+                item.setIcon(newNotificationsActivationState ? R.drawable.ic_notifications_on : R.drawable.ic_notifications_off);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
@@ -59,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
             new AlertDialog.Builder(MainActivity.this)
                     .setMessage("Pas de réseau et pas de sauvegarde locale")
                     .create().show();
-        }catch (IOException | ParseException e) {
+        } catch (IOException | ParseException e) {
             Log.e(TAG, "Error getting passages from local file", e);
             new AlertDialog.Builder(MainActivity.this)
                     .setMessage(e.getMessage())
@@ -86,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
 
         private final List<Passage> passages;
 
-        private PassagesAdapter(List<Passage> passages){
+        private PassagesAdapter(List<Passage> passages) {
             this.passages = passages;
         }
 
@@ -108,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public View getView(int position, View convertView, ViewGroup container) {
             if (convertView == null) {
-                convertView =  getLayoutInflater().inflate(R.layout.item, container, false);
+                convertView = getLayoutInflater().inflate(R.layout.item, container, false);
             }
             Passage item = getItem(position);
             ((TextView) convertView.findViewById(R.id.date)).setText(
@@ -116,14 +152,14 @@ public class MainActivity extends AppCompatActivity {
             );
             ((TextView) convertView.findViewById(R.id.hours)).setText(
                     getString(R.string.time, TIME_FORMAT.format(item.closing), TIME_FORMAT.format(item.reopening)
-            ));
+                    ));
             ((TextView) convertView.findViewById(R.id.boat)).setText(item.boat);
             String type = item.type;
             TextView typeView = convertView.findViewById(R.id.type);
-            if(type.equals("Totale")) {
+            if (type.equals("Totale")) {
                 typeView.setText("");
                 typeView.setVisibility(View.GONE);
-            }else {
+            } else {
                 typeView.setText(type);
                 typeView.setVisibility(View.VISIBLE);
             }
@@ -131,9 +167,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private  class ResponseListener implements Response.Listener<List<Passage>> {
+    private class ResponseListener implements Response.Listener<List<Passage>> {
 
-        ResponseListener(ListView listView){
+        ResponseListener(ListView listView) {
             MainActivity.this.listView = listView;
         }
 

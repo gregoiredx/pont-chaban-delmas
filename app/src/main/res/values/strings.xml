@@ -2,4 +2,7 @@
     <string name="app_name">Pont Chaban-Delmas</string>
     <string name="date">Le %1$s</string>
     <string name="time">de %1$s à %2$s</string>
+    <string name="notifications_off">Notifications désactivées</string>
+    <string name="notifications_activated">Notifications activées</string>
+    <string name="notifications_deactivated">Notifications désactivées</string>
 </resources>
