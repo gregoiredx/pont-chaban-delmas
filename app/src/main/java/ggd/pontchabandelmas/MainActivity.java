@@ -1,11 +1,13 @@
 package ggd.pontchabandelmas;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -17,18 +19,12 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.Volley;
-
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,18 +38,36 @@ public class MainActivity extends AppCompatActivity {
 
     private ListView listView;
 
+    private BroadcastReceiver passagesUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final boolean successful = intent.getBooleanExtra(UpdatePassagesService.SUCCESSFUL_EXTRA, false);
+            Log.i(TAG, "received update passages result: successful " + successful);
+            new Handler(getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), successful ? R.string.passages_update_success : R.string.passages_update_failed, Toast.LENGTH_SHORT).show();
+                }
+            });
+            initFromLocalFile();
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         listView = (ListView) findViewById(R.id.listView);
-        Date startDate = new Date(new Date().getTime() - 1000 * 60 * 60 * 24);
-        if (isConnected()) {
-            initFromServer(startDate);
-        } else {
-            initFromLocalFile(startDate);
-        }
+        LocalBroadcastManager.getInstance(this).registerReceiver(passagesUpdateReceiver, new IntentFilter(UpdatePassagesService.PASSAGES_UPDATE_RESULT_INTENT_ACTION));
+        startService(new Intent(this, UpdatePassagesService.class));
     }
+
+    @Override
+    protected void onDestroy() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(passagesUpdateReceiver);
+        super.onDestroy();
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -86,36 +100,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void initFromLocalFile(Date startDate) {
+    private void initFromLocalFile() {
         try {
-            FileInputStream fileInputStream = openFileInput(LOCAL_FILE);
-            showPassages(new PrevisionsParser().parse(startDate, fileInputStream));
+            List<Passage> passages = Passages.read(this);
+            listView.setAdapter(new PassagesAdapter(passages));
         } catch (FileNotFoundException e) {
-            Log.e(TAG, "No connectivity and no local file", e);
-            new AlertDialog.Builder(MainActivity.this)
-                    .setMessage("Pas de réseau et pas de sauvegarde locale")
-                    .create().show();
+            Log.e(TAG, "No local file", e);
+            new AlertDialog.Builder(MainActivity.this).setMessage(R.string.no_local_file).create().show();
         } catch (IOException | ParseException e) {
             Log.e(TAG, "Error getting passages from local file", e);
-            new AlertDialog.Builder(MainActivity.this)
-                    .setMessage(e.getMessage())
-                    .create().show();
+            new AlertDialog.Builder(MainActivity.this).setMessage(R.string.invalid_local_file).create().show();
         }
-    }
-
-    private void initFromServer(Date startDate) {
-        RequestQueue queue = Volley.newRequestQueue(this);
-        PassagesRequest passagesRequest = new PassagesRequest(
-                this,
-                startDate, new ResponseListener(listView),
-                new ErrorListener());
-        queue.add(passagesRequest);
-    }
-
-    private boolean isConnected() {
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo ni = cm.getActiveNetworkInfo();
-        return ni != null && ni.isConnected();
     }
 
     private class PassagesAdapter extends BaseAdapter {
@@ -167,29 +162,5 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class ResponseListener implements Response.Listener<List<Passage>> {
 
-        ResponseListener(ListView listView) {
-            MainActivity.this.listView = listView;
-        }
-
-        @Override
-        public void onResponse(List<Passage> passages) {
-            showPassages(passages);
-        }
-    }
-
-    private void showPassages(List<Passage> passages) {
-        listView.setAdapter(new PassagesAdapter(passages));
-    }
-
-    private class ErrorListener implements Response.ErrorListener {
-        @Override
-        public void onErrorResponse(VolleyError error) {
-            Log.e(TAG, "Error getting passages from server", error);
-            new AlertDialog.Builder(MainActivity.this)
-                    .setMessage(error.getMessage())
-                    .create().show();
-        }
-    }
 }

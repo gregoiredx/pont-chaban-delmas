@@ -5,4 +5,8 @@
     <string name="notifications_off">Notifications désactivées</string>
     <string name="notifications_activated">Notifications activées</string>
     <string name="notifications_deactivated">Notifications désactivées</string>
+    <string name="passages_update_failed">La liste des passages n\'a pas pu être mise à jour</string>
+    <string name="passages_update_success">La liste des passages a bien été mise à jour</string>
+    <string name="no_local_file">Vous devez être connecté à internet lors de la première utilisation pour récupérer la liste des passages</string>
+    <string name="invalid_local_file">Un problème est survenu pendant la récupération des informations. Assurez-vous d\'être connecté à internet et relancez l\'application.</string>
 </resources>

@@ -8,7 +8,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Le jeudi 1 octobre"
-        android:textSize="20sp" />
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/hours"
@@ -22,7 +23,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="BELEM"
-        android:textSize="15sp" />
+        android:textSize="15sp"
+        android:gravity="right"
+        android:layout_gravity="right" />
 
     <TextView
         android:id="@+id/type"
