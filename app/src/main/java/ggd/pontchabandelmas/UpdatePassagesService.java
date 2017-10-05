@@ -16,7 +16,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.Volley;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class UpdatePassagesService extends IntentService {
@@ -59,9 +58,7 @@ public class UpdatePassagesService extends IntentService {
         @Override
         protected void deliverResponse(byte[] response) {
             try {
-                FileOutputStream fileOutputStream = getApplicationContext().openFileOutput(MainActivity.LOCAL_FILE, Context.MODE_PRIVATE);
-                fileOutputStream.write(response);
-                fileOutputStream.close();
+                new LocalPassages(getApplicationContext()).write(response);
                 sendUpdateResultIntent(true);
             } catch (IOException e) {
                 getErrorListener().onErrorResponse(new VolleyError("Could not write local file", e));

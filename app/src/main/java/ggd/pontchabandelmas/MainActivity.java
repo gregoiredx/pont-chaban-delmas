@@ -23,18 +23,18 @@ import android.widget.Toast;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String LOCAL_FILE = "previsions.csv";
     private static final String TAG = "ggd.pontchaban.main";
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEEE d MMMM yyyy", Locale.FRANCE);
-    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm", Locale.FRANCE);
+    private static final DateFormat DATE_FORMAT = DateFormat.getDateInstance(DateFormat.FULL);
+    private static final DateFormat TIME_FORMAT = DateFormat.getTimeInstance(DateFormat.SHORT);
+
+
 
     private ListView listView;
 
@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         listView = (ListView) findViewById(R.id.listView);
@@ -102,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initFromLocalFile() {
         try {
-            List<Passage> passages = Passages.read(this);
+            List<Passage> passages = new LocalPassages(getApplicationContext()).read();
             listView.setAdapter(new PassagesAdapter(passages));
         } catch (FileNotFoundException e) {
             Log.e(TAG, "No local file", e);
@@ -142,12 +144,9 @@ public class MainActivity extends AppCompatActivity {
                 convertView = getLayoutInflater().inflate(R.layout.item, container, false);
             }
             Passage item = getItem(position);
-            ((TextView) convertView.findViewById(R.id.date)).setText(
-                    getString(R.string.date, DATE_FORMAT.format(item.closing))
-            );
-            ((TextView) convertView.findViewById(R.id.hours)).setText(
-                    getString(R.string.time, TIME_FORMAT.format(item.closing), TIME_FORMAT.format(item.reopening)
-                    ));
+            ((TextView) convertView.findViewById(R.id.date)).setText(DATE_FORMAT.format(item.closing));
+            ((TextView) convertView.findViewById(R.id.closingTime)).setText(TIME_FORMAT.format(item.closing));
+            ((TextView) convertView.findViewById(R.id.reopeningTime)).setText(TIME_FORMAT.format(item.reopening));
             ((TextView) convertView.findViewById(R.id.boat)).setText(item.boat);
             String type = item.type;
             TextView typeView = convertView.findViewById(R.id.type);

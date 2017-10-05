@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Pont Chaban-Delmas</string>
-    <string name="date">Le %1$s</string>
-    <string name="time">de %1$s à %2$s</string>
+    <string name="fromto">→</string>
     <string name="notifications_off">Notifications désactivées</string>
     <string name="notifications_activated">Notifications activées</string>
     <string name="notifications_deactivated">Notifications désactivées</string>
@@ -9,4 +8,6 @@
     <string name="passages_update_success">La liste des passages a bien été mise à jour</string>
     <string name="no_local_file">Vous devez être connecté à internet lors de la première utilisation pour récupérer la liste des passages</string>
     <string name="invalid_local_file">Un problème est survenu pendant la récupération des informations. Assurez-vous d\'être connecté à internet et relancez l\'application.</string>
+    <string name="read_passages_error_while_scheduling_notifications">Impossible de planifier les notifications, la liste des passages n\'est pas disponible</string>
+    <string name="passages">Passages</string>
 </resources>
